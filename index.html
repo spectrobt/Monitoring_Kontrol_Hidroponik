@@ -130,7 +130,7 @@
     <!-- Judul dan Subjudul -->
     <div class="text-center sm:text-left">
       <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-green-800 leading-snug">
-        SISTEM HIDROPONIK
+        SMART HYDROPNICS
       </h1>
       <p class="text-emerald-600 font-medium text-sm sm:text-base mt-1 sm:mt-2">
         Real-Time Monitoring & Kontrol Sistem
@@ -184,7 +184,7 @@
       <div class="transparent-card border-t-4 border-yellow-500 p-5 sm:p-6">
         <div class="flex flex-col items-center">
           <div class="text-yellow-600 text-3xl mb-3"><i data-lucide="droplets"></i></div>
-          <h2 class="text-lg font-semibold text-gray-700">Volume Nutrisi</h2>
+          <h2 class="text-lg font-semibold text-gray-700">Volume Tangki</h2>
           <div class="value-display my-3">
             <span id="volumeValue">--</span><span class="unit">%</span>
           </div>
@@ -196,13 +196,49 @@
       </div>
     </div>
 
+<!-- Card Kontrol Pompa Volume -->
+<div class="transparent-card border-t-4 border-yellow-500 p-5 sm:p-6 mb-6">
+  <div class="flex flex-col items-center">
+
+    <!-- Icon + Title sejajar -->
+    <div class="flex items-center gap-3 mb-4">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M4 6h16M4 18h16" />
+      </svg>
+      <h2 class="text-lg font-semibold">Kontrol Pompa Tangki</h2>
+    </div>
+
+    <!-- Switch Pompa Volume -->
+    <div class="mt-2 flex items-center justify-center gap-3">
+      <div class="relative inline-flex items-center">
+        <input type="checkbox" id="pumpSwitch" class="sr-only" />
+        <label for="pumpSwitch" id="pumpSwitchLabel"
+          class="w-14 h-8 flex items-center bg-gray-300 rounded-full p-1 cursor-pointer transition-colors duration-200">
+          <!-- Knob -->
+          <span class="bg-white w-6 h-6 rounded-full shadow-md transform transition-transform duration-200"
+            id="pumpKnob"></span>
+        </label>
+      </div>
+      <div>
+        <div class="text-sm text-gray-600">Pompa Tangki</div>
+        <div id="pumpStateText" class="text-xs font-medium text-gray-500">Mati</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+
+
     <!-- Kontrol PWM dan Set Threshold -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 sm:mb-12">
       <!-- Kontrol PWM -->
       <div class="transparent-card rounded-xl p-6">
         <div class="flex items-center justify-center gap-3 mb-5">
           <i data-lucide="sliders" class="text-green-600 w-6 h-6"></i>
-          <h2 class="text-xl font-semibold text-gray-800">Kontrol Pengaduk (PWM)</h2>
+          <h2 class="text-xl font-semibold text-gray-800">Kontrol Mixer (PWM)</h2>
         </div>
         <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
           <div class="relative">
@@ -224,7 +260,7 @@
       <div class="transparent-card rounded-xl p-6">
         <div class="flex items-center justify-center gap-3 mb-5">
           <i data-lucide="settings" class="text-blue-600 w-6 h-6"></i>
-          <h2 class="text-xl font-semibold text-gray-800">Set Threshold Nutrisi</h2>
+          <h2 class="text-xl font-semibold text-gray-800">Set Nutritional Thresholds </h2>
         </div>
         <div class="flex flex-col sm:flex-row justify-center items-center gap-4 mb-5">
           <div class="relative">
@@ -273,6 +309,9 @@
       <div id="historyContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Riwayat akan muncul di sini -->
       </div>
+
+
+
     </div>
   </div>
 
@@ -492,11 +531,65 @@
       }
     });
 
+        // === Switch Pompa Volume: sinkronisasi ke Firebase (1 = ON, 0 = OFF) ===
+    const pumpSwitch = document.getElementById('pumpSwitch');
+    const pumpKnob = document.getElementById('pumpKnob');
+    const pumpSwitchLabel = document.getElementById('pumpSwitchLabel');
+    const pumpStateText = document.getElementById('pumpStateText');
+
+    // Referensi Firebase untuk kontrol pompa
+    const pumpRef = db.ref('Kontrol/Pompa_Volume');
+
+    // Fungsi untuk update tampilan switch berdasarkan nilai (0/1)
+    function updatePumpUI(value) {
+      const isOn = Number(value) === 1;
+      pumpSwitch.checked = isOn;
+
+      if (isOn) {
+        pumpSwitchLabel.classList.remove('bg-gray-300');
+        pumpSwitchLabel.classList.add('bg-green-500');
+        pumpKnob.style.transform = 'translateX(24px)';
+        pumpStateText.textContent = 'Menyalakan';
+        pumpStateText.classList.remove('text-gray-500');
+        pumpStateText.classList.add('text-green-600');
+      } else {
+        pumpSwitchLabel.classList.remove('bg-green-500');
+        pumpSwitchLabel.classList.add('bg-gray-300');
+        pumpKnob.style.transform = 'translateX(0)';
+        pumpStateText.textContent = 'Mati';
+        pumpStateText.classList.remove('text-green-600');
+        pumpStateText.classList.add('text-gray-500');
+      }
+    }
+
+    // Dengar perubahan dari Firebase (sinkronisasi dua arah)
+    pumpRef.on('value', snapshot => {
+      const val = snapshot.val();
+      // Jika belum ada data, anggap 0 (mati)
+      updatePumpUI(val ?? 0);
+    });
+
+    // Saat user klik toggle, kirim ke Firebase
+    pumpSwitch.addEventListener('change', () => {
+      const newVal = pumpSwitch.checked ? 1 : 0;
+      // kirim angka 1 atau 0 ke database
+      pumpRef.set(newVal)
+        .then(() => {
+          showAlert('success', `Perintah pompa dikirim: ${newVal}`);
+        })
+        .catch(err => {
+          showAlert('error', 'Gagal mengirim perintah pompa');
+          // rollback UI jika gagal
+          pumpRef.once('value').then(s => updatePumpUI(s.val() ?? 0));
+          console.error(err);
+        });
+    });
+
+
     lucide.createIcons();
   </script>
 </body>
 
 
 </html>
-
 
