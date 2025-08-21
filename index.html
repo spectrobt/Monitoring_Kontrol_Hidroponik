@@ -323,14 +323,14 @@
 
   <script>
     const firebaseConfig = {
-          apiKey: "AIzaSyC7lJoxgrUWMXGj_2PpSME6gA3uw64yFu8",
-          authDomain: "monitoring-dan-kontrol-9c08a.firebaseapp.com",
-          databaseURL: "https://monitoring-dan-kontrol-9c08a-default-rtdb.firebaseio.com",
-          projectId: "monitoring-dan-kontrol-9c08a",
-          storageBucket: "monitoring-dan-kontrol-9c08a.firebasestorage.app",
-          messagingSenderId: "301792096158",
-          appId: "1:301792096158:web:d957234728d5a8ca6bb08f",
-          measurementId: "G-4LFZHDK6DP"
+      apiKey: "AIzaSyC7lJoxgrUWMXGj_2PpSME6gA3uw64yFu8",
+      authDomain: "monitoring-dan-kontrol-9c08a.firebaseapp.com",
+      databaseURL: "https://monitoring-dan-kontrol-9c08a-default-rtdb.firebaseio.com/",
+      projectId: "monitoring-dan-kontrol-9c08a",
+      storageBucket: "monitoring-dan-kontrol-9c08a.appspot.com",
+      messagingSenderId: "301792096158",
+      appId: "1:301792096158:web:d957234728d5a8ca6bb08f",
+      measurementId: "G-4LFZHDK6DP"
     };
 
     firebase.initializeApp(firebaseConfig);
@@ -373,7 +373,7 @@
     document.getElementById('sendPWM').addEventListener('click', () => {
       const pwmValue = parseInt(document.getElementById('pwmInput').value);
       if (!isNaN(pwmValue) && pwmValue >= 0 && pwmValue <= 255) {
-        db.ref('Kontrol/PWM_Motor').set(pwmValue.toString());
+        db.ref('Kontrol/PWM_Motor').set(pwmValue); // tanpa .toString()
         showAlert('success', 'Nilai PWM dikirim: ' + pwmValue);
       } else {
         showAlert('error', 'Masukkan nilai antara 0 - 255');
@@ -592,6 +592,4 @@
 
 
 </html>
-
-
 
