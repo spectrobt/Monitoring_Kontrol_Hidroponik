@@ -9,6 +9,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <style>
     .transparent-card {
       background: rgba(255, 255, 255, 0.72);
@@ -306,10 +309,30 @@
           <i data-lucide="search" class="w-5 h-5"></i><span>Search</span>
         </button>
       </div>
+
+      <!-- Grafik History -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div>
+          <h3 class="text-center font-semibold mb-2 text-green-700">pH</h3>
+          <canvas id="phChart" height="120"></canvas>
+        </div>
+        <div>
+          <h3 class="text-center font-semibold mb-2 text-blue-700">TDS</h3>
+          <canvas id="tdsChart" height="120"></canvas>
+        </div>
+        <div>
+          <h3 class="text-center font-semibold mb-2 text-yellow-600">Volume</h3>
+          <canvas id="volumeChart" height="120"></canvas>
+        </div>
+      </div>
+
+
       <div id="historyContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <!-- Riwayat akan muncul di sini -->
       </div>
 
+
+ 
 
 
     </div>
@@ -319,6 +342,7 @@
   <p>© 2025 Monitoring & Control of Hydroponic Systems</p>
   <p>Politeknik Manufaktur Negeri Bangka Belitung</p>
 </footer>
+
 
 
   <script>
@@ -434,7 +458,13 @@
 
       const [yyyy, mm, dd] = dateVal.split('-');
       const dateKey = `${dd}-${mm}-${yyyy}`;
-      const ref = timeVal ? db.ref(`Histori/${dateKey}/${timeVal}`) : db.ref(`Histori/${dateKey}`);
+
+      updateHistoryChart(dateKey);
+
+        // Update grafik
+        const ref = timeVal ? db.ref(`Histori/${dateKey}/${timeVal}`) : db.ref(`Histori/${dateKey}`);
+
+      //const ref = timeVal ? db.ref(`Histori/${dateKey}/${timeVal}`) : db.ref(`Histori/${dateKey}`);
       
       historyContainer.innerHTML = `
         <div class="col-span-full py-8 flex justify-center">
@@ -500,6 +530,74 @@
       historyContainer.appendChild(card);
       lucide.createIcons();
     }
+
+    // === Grafik History ===
+const phCtx = document.getElementById('phChart').getContext('2d');
+const tdsCtx = document.getElementById('tdsChart').getContext('2d');
+const volumeCtx = document.getElementById('volumeChart').getContext('2d');
+
+let phChart = new Chart(phCtx, {
+  type: 'line',
+  data: { labels: [], datasets: [{ 
+    label: 'pH', data: [], borderColor: '#10b981',
+    backgroundColor: 'rgba(16,185,129,0.2)', fill: true, tension: 0.3
+  }]},
+  options: { responsive: true, scales:{ x:{title:{display:true,text:'Waktu'}}, y:{title:{display:true,text:'pH'}} } }
+});
+
+let tdsChart = new Chart(tdsCtx, {
+  type: 'line',
+  data: { labels: [], datasets: [{ 
+    label: 'TDS (ppm)', data: [], borderColor: '#3b82f6',
+    backgroundColor: 'rgba(59,130,246,0.2)', fill: true, tension: 0.3
+  }]},
+  options: { responsive: true, scales:{ x:{title:{display:true,text:'Waktu'}}, y:{title:{display:true,text:'ppm'}} } }
+});
+
+let volumeChart = new Chart(volumeCtx, {
+  type: 'line',
+  data: { labels: [], datasets: [{ 
+    label: 'Volume (%)', data: [], borderColor: '#facc15',
+    backgroundColor: 'rgba(250,204,21,0.2)', fill: true, tension: 0.3
+  }]},
+  options: { responsive: true, scales:{ x:{title:{display:true,text:'Waktu'}}, y:{title:{display:true,text:'%'}} } }
+});
+
+
+// === Update Grafik dari Firebase ===
+function updateHistoryChart(dateKey) {
+  const ref = db.ref(`Histori/${dateKey}`);
+  ref.once('value', snapshot => {
+    const data = snapshot.val();
+    if (!data) return;
+
+    const labels = [];
+    const phData = [];
+    const tdsData = [];
+    const volumeData = [];
+
+    Object.keys(data).sort().forEach(jam => {
+      labels.push(jam);
+      phData.push(parseFloat(data[jam].pH ?? 0));
+      tdsData.push(parseInt(data[jam].TDS ?? 0));
+      volumeData.push(parseInt(data[jam].Volume ?? 0));
+    });
+
+    phChart.data.labels = labels;
+    phChart.data.datasets[0].data = phData;
+    phChart.update();
+
+    tdsChart.data.labels = labels;
+    tdsChart.data.datasets[0].data = tdsData;
+    tdsChart.update();
+
+    volumeChart.data.labels = labels;
+    volumeChart.data.datasets[0].data = volumeData;
+    volumeChart.update();
+  });
+}
+
+
 
     function showAlert(type, message) {
       const alertDiv = document.createElement('div');
@@ -592,5 +690,4 @@
 
 
 </html>
-
 
